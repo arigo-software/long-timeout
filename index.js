@@ -1,44 +1,40 @@
-
-var TIMEOUT_MAX = 2147483647; // 2^31-1
-
-exports.setTimeout = function(listener, after) {
-  return new Timeout(listener, after)
+var TIMEOUT_MAX = 2147483647; // 2^31-1exports.setTimeout = function(listener, after) {
+  var args = [listener, after];
+  for (i = 2; i < arguments.length; i++) {
+    args[i] = arguments[i];
+  }
+  return new Timeout(listener, after, args)
 }
 exports.setInterval = function(listener, after) {
-  return new Interval(listener, after)
+  var args = [];
+  for (i = 2; i < arguments.length; i++) {
+    args[i-2] = arguments[i];
+  }
+  return new Interval(listener, after, args)
 }
 exports.clearTimeout = function(timer) {
   if (timer) timer.close()
 }
-exports.clearInterval = exports.clearTimeout
-
-exports.Timeout = Timeout
-exports.Interval = Interval
-
-function Timeout(listener, after) {
+exports.clearInterval = exports.clearTimeoutexports.Timeout = Timeout
+exports.Interval = Intervalfunction Timeout(listener, after, args) {
   this.listener = listener
   this.after = after
   this.unreffed = false
+  this.args = args
   this.start()
-}
-
-Timeout.prototype.unref = function() {
+}Timeout.prototype.unref = function() {
   if (!this.unreffed) {
     this.unreffed = true
     this.timeout.unref()
   }
-}
-
-Timeout.prototype.ref = function() {
+}Timeout.prototype.ref = function() {
   if (this.unreffed) {
     this.unreffed = false
     this.timeout.ref()
   }
-}
-
-Timeout.prototype.start = function() {
+}Timeout.prototype.start = function() {
   if (this.after <= TIMEOUT_MAX) {
-    this.timeout = setTimeout(this.listener, this.after)
+    this.timeout = setTimeout.apply(null, this.args)
   } else {
     var self = this
     this.timeout = setTimeout(function() {
@@ -49,39 +45,29 @@ Timeout.prototype.start = function() {
   if (this.unreffed) {
     this.timeout.unref()
   }
-}
-
-Timeout.prototype.close = function() {
+}Timeout.prototype.close = function() {
   clearTimeout(this.timeout)
-}
-
-function Interval(listener, after) {
+}function Interval(listener, after, args) {
   this.listener = listener
   this.after = this.timeLeft = after
   this.unreffed = false
+  this.args = args
   this.start()
-}
-
-Interval.prototype.unref = function() {
+}Interval.prototype.unref = function() {
   if (!this.unreffed) {
     this.unreffed = true
     this.timeout.unref()
   }
-}
-
-Interval.prototype.ref = function() {
+}Interval.prototype.ref = function() {
   if (this.unreffed) {
     this.unreffed = false
     this.timeout.ref()
   }
-}
-
-Interval.prototype.start = function() {
+}Interval.prototype.start = function() {
   var self = this
-
   if (this.timeLeft <= TIMEOUT_MAX) {
     this.timeout = setTimeout(function() {
-      self.listener()
+      self.listener.apply(null, self.args)
       self.timeLeft = self.after
       self.start()
     }, this.timeLeft)
@@ -94,8 +80,6 @@ Interval.prototype.start = function() {
   if (this.unreffed) {
     this.timeout.unref()
   }
-}
-
-Interval.prototype.close = function() {
+}Interval.prototype.close = function() {
   Timeout.prototype.close.apply(this, arguments)
 }
