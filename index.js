@@ -2,6 +2,7 @@
 var TIMEOUT_MAX = 2147483647; // 2^31-1
 
 exports.setTimeout = function(listener, after) {
+  if (!after) after=0;
   var args = [listener, after];
   for (i = 2; i < arguments.length; i++) {
     args[i] = arguments[i];
@@ -9,6 +10,7 @@ exports.setTimeout = function(listener, after) {
   return new Timeout(listener, after, args)
 }
 exports.setInterval = function(listener, after) {
+  if (!after) after=0;
   var args = [];
   for (i = 2; i < arguments.length; i++) {
     args[i-2] = arguments[i];
